@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Chef - GreenDelivery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .chef-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--primary-color);
+            margin-bottom: 1rem;
+            object-fit: cover;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: #bdc3c7;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #34495e;
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            background: #f4f6f8;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .kpi-info h3 {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* Orders Section */
+        .orders-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .orders-column {
+            background: #eef2f7;
+            padding: 1rem;
+            border-radius: 12px;
+            min-height: 500px;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+
+        .badge-count {
+            background: var(--text-dark);
+            color: #fff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .order-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid transparent;
+            animation: slideUp 0.3s ease;
+        }
+
+        .order-card.new {
+            border-left-color: #e74c3c;
+        }
+
+        .order-card.cooking {
+            border-left-color: #f39c12;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .order-items {
+            margin: 1rem 0;
+            padding-left: 1.2rem;
+        }
+
+        .order-items li {
+            margin-bottom: 0.25rem;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn-accept { background: #e74c3c; color: #fff; }
+        .btn-accept:hover { background: #c0392b; }
+
+        .btn-ready { background: #27ae60; color: #fff; }
+        .btn-ready:hover { background: #219150; }
+
+        @media (max-width: 900px) {
+            .dashboard-container { grid-template-columns: 1fr; }
+            .sidebar { display: none; } /* Mobile menu needed in real app */
+            .orders-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img id="chef-avatar" src="" alt="Chef" class="chef-avatar">
+                <h3 id="chef-name">Chargement...</h3>
+                <span class="badge badge-success">En ligne</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="chef-dashboard.html" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="menu-management.html" class="nav-item">
+                    <i class="fas fa-utensils"></i> Mon Menu
+                </a>
+                <a href="chef-finance.html" class="nav-item">
+                    <i class="fas fa-chart-line"></i> Finances
+                </a>
+                <a href="#" id="btn-logout" class="nav-item" style="margin-top: auto;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div>
+                    <h1>Tableau de bord</h1>
+                    <p class="text-light">Gérez vos commandes en temps réel.</p>
+                </div>
+                <div class="date-display" id="current-date">
+                    --/--/----
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #e8f5e9; color: #27ae60;">
+                        <i class="fas fa-euro-sign"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3>CA du Jour</h3>
+                        <div class="kpi-value" id="kpi-revenue">0 €</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #fff3e0; color: #f39c12;">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3>À préparer</h3>
+                        <div class="kpi-value" id="kpi-pending">0</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #e3f2fd; color: #2980b9;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3>Terminées</h3>
+                        <div class="kpi-value" id="kpi-completed">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Board -->
+            <div class="orders-section">
+                
+                <!-- Column: Pending -->
+                <div class="orders-column">
+                    <div class="column-header">
+                        <h2><i class="fas fa-bell text-danger"></i> Nouvelles</h2>
+                        <span class="badge-count" id="count-pending">0</span>
+                    </div>
+                    <div id="list-pending">
+                        <!-- Injected via JS -->
+                        <div class="loader-container"><div class="loader"></div></div>
+                    </div>
+                </div>
+
+                <!-- Column: Cooking -->
+                <div class="orders-column">
+                    <div class="column-header">
+                        <h2><i class="fas fa-fire text-warning"></i> En Cuisine</h2>
+                        <span class="badge-count" id="count-cooking">0</span>
+                    </div>
+                    <div id="list-cooking">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Audio for new orders -->
+    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { logout } from './auth-oauth.js';
+
+        // DOM Elements
+        const chefNameEl = document.getElementById('chef-name');
+        const chefAvatarEl = document.getElementById('chef-avatar');
+        const listPending = document.getElementById('list-pending');
+        const listCooking = document.getElementById('list-cooking');
+        const countPending = document.getElementById('count-pending');
+        const countCooking = document.getElementById('count-cooking');
+        const kpiRevenue = document.getElementById('kpi-revenue');
+        const kpiPending = document.getElementById('kpi-pending');
+        const kpiCompleted = document.getElementById('kpi-completed');
+        const notificationSound = document.getElementById('notification-sound');
+        const currentDateEl = document.getElementById('current-date');
+
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentDateEl.textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            await verifyAuth();
+            await loadDashboardData();
+            setupRealtime();
+
+            document.getElementById('btn-logout').addEventListener('click', async (e) => {
+                e.preventDefault();
+                await logout();
+                window.location.href = 'login.html';
+            });
+        });
+
+        // 1. Verify Auth & Role
+        async function verifyAuth() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error || !session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const role = session.user.user_metadata.role;
+            if (role !== 'chef') {
+                window.location.href = 'index.html'; // Unauthorized
+                return;
+            }
+
+            currentUser = session.user;
+            
+            // Load Profile Info
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (profile) {
+                chefNameEl.textContent = profile.name;
+                chefAvatarEl.src = profile.avatar || 'https://via.placeholder.com/80';
+            }
+        }
+
+        // 2. Load Data (KPIs + Orders)
+        async function loadDashboardData() {
+            // Load KPIs via RPC
+            try {
+                const { data: stats, error } = await supabase
+                    .rpc('get_chef_stats', { chef_uuid: currentUser.id });
+
+                if (!error && stats) {
+                    // Assuming RPC returns { revenue, pending_count, completed_count }
+                    // If RPC not implemented yet, we handle fallback below or just show 0
+                    kpiRevenue.textContent = `${stats.revenue || 0} €`;
+                    kpiPending.textContent = stats.pending_count || 0;
+                    kpiCompleted.textContent = stats.completed_count || 0;
+                } else {
+                    console.warn('RPC Stats error or empty:', error);
+                    // Fallback: Calculate manually if needed, or leave 0
+                }
+            } catch (err) {
+                console.error('Stats error:', err);
+            }
+
+            // Load Active Orders
+            await fetchOrders();
+        }
+
+        async function fetchOrders() {
+            try {
+                // Fetch orders with items
+                // Note: In a real app, we would join order_items table. 
+                // Here assuming a JSON column 'items_snapshot' or separate fetch.
+                // Let's assume we fetch orders and then items or items are not needed for dashboard summary.
+                // For this demo, we'll just show the order total and ID.
+                
+                const { data: orders, error } = await supabase
+                    .from('orders')
+                    .select('*')
+                    .eq('chef_id', currentUser.id)
+                    .in('status', ['pending', 'cooking'])
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                renderOrders(orders);
+
+            } catch (err) {
+                console.error('Orders error:', err);
+                listPending.innerHTML = '<p class="text-danger">Erreur de chargement.</p>';
+            }
+        }
+
+        function renderOrders(orders) {
+            listPending.innerHTML = '';
+            listCooking.innerHTML = '';
+
+            let pendingCount = 0;
+            let cookingCount = 0;
+
+            orders.forEach(order => {
+                const card = createOrderCard(order);
+                
+                if (order.status === 'pending') {
+                    listPending.appendChild(card);
+                    pendingCount++;
+                } else if (order.status === 'cooking') {
+                    listCooking.appendChild(card);
+                    cookingCount++;
+                }
+            });
+
+            countPending.textContent = pendingCount;
+            countCooking.textContent = cookingCount;
+            
+            // Update KPI pending if RPC failed or to keep sync
+            kpiPending.textContent = pendingCount;
+        }
+
+        function createOrderCard(order) {
+            const div = document.createElement('div');
+            div.className = `order-card ${order.status === 'pending' ? 'new' : 'cooking'}`;
+            
+            const time = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Action Buttons Logic
+            let actionsHtml = '';
+            if (order.status === 'pending') {
+                actionsHtml = `<button class="btn-action btn-accept" onclick="updateOrderStatus('${order.id}', 'cooking')">Accepter & Cuisiner</button>`;
+            } else if (order.status === 'cooking') {
+                actionsHtml = `<button class="btn-action btn-ready" onclick="updateOrderStatus('${order.id}', 'ready_for_pickup')">Prêt pour livraison</button>`;
+            }
+
+            div.innerHTML = `
+                <div class="order-header">
+                    <strong>#${order.id.slice(0, 6)}</strong>
+                    <span><i class="far fa-clock"></i> ${time}</span>
+                </div>
+                <div class="order-body">
+                    <p><strong>Total:</strong> ${order.total_price} €</p>
+                    <p class="text-light text-sm">Client: ${order.delivery_address ? 'Livraison' : 'Sur place'}</p>
+                </div>
+                <div class="order-actions">
+                    ${actionsHtml}
+                </div>
+            `;
+
+            // Bind click event for buttons (since onclick string won't work with module scope easily without window attachment)
+            const btn = div.querySelector('button');
+            if (btn) {
+                btn.onclick = () => {
+                    const nextStatus = order.status === 'pending' ? 'cooking' : 'delivering'; // Simplified flow: cooking -> delivering (assigned to courier)
+                    // Actually, usually: pending -> cooking -> ready -> (courier picks up) -> delivering
+                    // Let's stick to prompt: "En préparation" (cooking)
+                    
+                    let targetStatus = 'cooking';
+                    if (order.status === 'cooking') targetStatus = 'delivering'; // Or 'ready', but let's assume chef triggers delivery request
+                    
+                    updateOrderStatus(order.id, targetStatus);
+                };
+            }
+
+            return div;
+        }
+
+        // 3. Update Order Status
+        window.updateOrderStatus = async (orderId, newStatus) => {
+            try {
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ status: newStatus })
+                    .eq('id', orderId);
+
+                if (error) throw error;
+
+                // UI will update via Realtime, but we can optimistically reload
+                // fetchOrders(); 
+            } catch (err) {
+                console.error('Update error:', err);
+                alert('Impossible de mettre à jour la commande.');
+            }
+        };
+
+        // 4. Realtime Subscription
+        function setupRealtime() {
+            const channel = supabase
+                .channel('chef-dashboard')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `chef_id=eq.${currentUser.id}`
+                    },
+                    (payload) => {
+                        console.log('Realtime update:', payload);
+                        
+                        if (payload.eventType === 'INSERT') {
+                            // Play sound for new order
+                            notificationSound.play().catch(e => console.log('Audio blocked', e));
+                        }
+                        
+                        // Refresh data
+                        fetchOrders();
+                        // Refresh stats
+                        supabase.rpc('get_chef_stats', { chef_uuid: currentUser.id })
+                            .then(({ data }) => {
+                                if (data) {
+                                    kpiRevenue.textContent = `${data.revenue || 0} €`;
+                                    kpiCompleted.textContent = data.completed_count || 0;
+                                }
+                            });
+                    }
+                )
+                .subscribe();
+        }
+
+    </script>
+</body>
+</html>

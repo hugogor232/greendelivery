@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Panier - GreenDelivery</title>
+    <meta name="description" content="Finalisez votre commande de plats faits maison.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        /* Cart Specific Styles */
+        .cart-page {
+            padding: 3rem 0;
+            background: var(--bg-light);
+            min-height: 80vh;
+        }
+
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .cart-section {
+            background: #fff;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--border-radius);
+            object-fit: cover;
+        }
+
+        .item-details h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .item-chef {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .qty-control {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .qty-btn {
+            background: none;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            color: var(--text-dark);
+        }
+
+        .qty-btn:hover {
+            background: var(--bg-light);
+        }
+
+        .qty-value {
+            padding: 0 0.5rem;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .item-price {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            text-align: right;
+        }
+
+        .remove-btn {
+            color: #dc2626;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        .remove-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Summary Section */
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border-color);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+        }
+
+        /* Stripe Elements */
+        #payment-element {
+            margin: 1.5rem 0;
+            min-height: 200px; /* Prevent layout shift */
+        }
+
+        .btn-checkout {
+            width: 100%;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .empty-cart i {
+            font-size: 3rem;
+            color: var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        #error-message {
+            color: #dc2626;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+            .cart-layout {
+                display: flex;
+                flex-direction: column-reverse;
+            }
+            /* Put summary on top on mobile? Or bottom. Usually bottom is better for flow, but top for visibility. 
+               Let's keep standard flow: Items then Summary. 
+               Actually, flex-direction column puts items first, summary last. Correct.
+            */
+            .cart-layout {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav intranet-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Continuer mes achats</a>
+                <button id="btn-logout" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="cart-page">
+        <div class="container">
+            <h1 style="margin-bottom: 2rem;">Votre Panier</h1>
+
+            <div id="loading-state" class="loader-container">
+                <div class="loader"></div>
+            </div>
+
+            <div id="cart-content" class="cart-layout hidden">
+                
+                <!-- Left: Items -->
+                <div class="cart-section">
+                    <div class="cart-header">
+                        <h2>Articles (<span id="item-count">0</span>)</h2>
+                    </div>
+                    <div id="cart-items-list">
+                        <!-- Items injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Summary & Payment -->
+                <div class="cart-section">
+                    <h2>Récapitulatif</h2>
+                    <div class="summary-row" style="margin-top: 1.5rem;">
+                        <span>Sous-total</span>
+                        <span id="subtotal-price">0.00 €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Frais de livraison</span>
+                        <span id="delivery-fee">2.50 €</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <span id="total-price">0.00 €</span>
+                    </div>
+
+                    <!-- Stripe Payment -->
+                    <div id="payment-form-container" class="hidden">
+                        <div id="payment-element">
+                            <!-- Stripe Elements will be inserted here -->
+                        </div>
+                        <button id="btn-pay" class="btn btn-primary btn-checkout">
+                            <span id="button-text">Payer maintenant</span>
+                            <div class="spinner hidden" id="spinner"></div>
+                        </button>
+                        <div id="error-message"></div>
+                    </div>
+                    
+                    <div id="empty-cart-actions" class="hidden">
+                        <a href="index.html" class="btn btn-primary btn-block">Découvrir les plats</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>GreenDelivery</h4>
+                <p>Paiement 100% sécurisé via Stripe.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Aide</h4>
+                <a href="index.html">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { logout } from './auth-oauth.js';
+
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const cartContent = document.getElementById('cart-content');
+        const cartItemsList = document.getElementById('cart-items-list');
+        const itemCountEl = document.getElementById('item-count');
+        const subtotalEl = document.getElementById('subtotal-price');
+        const totalEl = document.getElementById('total-price');
+        const paymentFormContainer = document.getElementById('payment-form-container');
+        const emptyCartActions = document.getElementById('empty-cart-actions');
+        const btnPay = document.getElementById('btn-pay');
+        const errorMessage = document.getElementById('error-message');
+        const btnLogout = document.getElementById('btn-logout');
+
+        // State
+        let currentUser = null;
+        let cartItems = [];
+        let totalAmount = 0;
+        let stripe = null;
+        let elements = null;
+        const DELIVERY_FEE = 2.50;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Auth Check
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+
+            // 2. Load Cart
+            await loadCart();
+
+            // 3. Logout Handler
+            btnLogout.addEventListener('click', async () => {
+                await logout();
+                window.location.href = 'login.html';
+            });
+        });
+
+        async function loadCart() {
+            try {
+                const { data, error } = await supabase
+                    .from('cart_items')
+                    .select(`
+                        id,
+                        quantity,
+                        product:products (
+                            id,
+                            name,
+                            price,
+                            image_url,
+                            chef_id,
+                            chef:profiles (name)
+                        )
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('created_at');
+
+                if (error) throw error;
+
+                cartItems = data;
+                renderCart();
+
+                if (cartItems.length > 0) {
+                    await initStripe();
+                }
+
+            } catch (err) {
+                console.error('Error loading cart:', err);
+                cartItemsList.innerHTML = '<p class="error-msg">Erreur de chargement du panier.</p>';
+            } finally {
+                loadingState.style.display = 'none';
+                cartContent.classList.remove('hidden');
+            }
+        }
+
+        function renderCart() {
+            cartItemsList.innerHTML = '';
+            let subtotal = 0;
+            let count = 0;
+
+            if (cartItems.length === 0) {
+                cartItemsList.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-basket"></i>
+                        <p>Votre panier est vide.</p>
+                    </div>
+                `;
+                itemCountEl.textContent = '0';
+                subtotalEl.textContent = '0.00 €';
+                totalEl.textContent = '0.00 €';
+                paymentFormContainer.classList.add('hidden');
+                emptyCartActions.classList.remove('hidden');
+                return;
+            }
+
+            paymentFormContainer.classList.remove('hidden');
+            emptyCartActions.classList.add('hidden');
+
+            cartItems.forEach(item => {
+                const product = item.product;
+                const itemTotal = product.price * item.quantity;
+                subtotal += itemTotal;
+                count += item.quantity;
+
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <img src="${product.image_url || 'https://via.placeholder.com/80'}" alt="${product.name}" class="item-image">
+                    <div class="item-details">
+                        <h3>${product.name}</h3>
+                        <p class="item-chef">Par ${product.chef?.name || 'Chef'}</p>
+                        <button class="remove-btn" data-id="${item.id}">Supprimer</button>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="item-price">${itemTotal.toFixed(2)} €</div>
+                        <div class="qty-control" style="margin-top: 0.5rem; justify-content: flex-end;">
+                            <span class="qty-value">x${item.quantity}</span>
+                        </div>
+                    </div>
+                `;
+                cartItemsList.appendChild(div);
+
+                // Attach event listener for delete
+                div.querySelector('.remove-btn').addEventListener('click', () => removeItem(item.id));
+            });
+
+            totalAmount = subtotal + DELIVERY_FEE;
+            
+            itemCountEl.textContent = count;
+            subtotalEl.textContent = `${subtotal.toFixed(2)} €`;
+            totalEl.textContent = `${totalAmount.toFixed(2)} €`;
+        }
+
+        async function removeItem(itemId) {
+            if(!confirm('Voulez-vous retirer cet article ?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('cart_items')
+                    .delete()
+                    .eq('id', itemId);
+                
+                if (error) throw error;
+                
+                // Reload cart
+                loadCart();
+            } catch (err) {
+                console.error('Error removing item:', err);
+                alert('Impossible de supprimer l\'article.');
+            }
+        }
+
+        // --- Stripe Integration ---
+
+        async function initStripe() {
+            // Initialize Stripe.js
+            // Note: Replace with your publishable key in a real env, but here we assume it's available or fetched
+            // For this output, I will use a placeholder key or fetch from config if possible. 
+            // Since I cannot fetch config, I will assume a global variable or hardcoded placeholder.
+            const STRIPE_PK = 'pk_test_TYooMQauvdEDq54NiTphI7jx'; // Placeholder Public Key
+            stripe = Stripe(STRIPE_PK);
+
+            // Call Edge Function to create PaymentIntent
+            try {
+                const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+                    body: { amount: Math.round(totalAmount * 100) } // Amount in cents
+                });
+
+                if (error) throw error;
+                
+                const clientSecret = data.clientSecret;
+
+                const appearance = { theme: 'stripe' };
+                elements = stripe.elements({ appearance, clientSecret });
+
+                const paymentElement = elements.create('payment');
+                paymentElement.mount('#payment-element');
+
+                // Enable button
+                btnPay.addEventListener('click', handlePayment);
+
+            } catch (err) {
+                console.error('Error initializing Stripe:', err);
+                errorMessage.textContent = "Erreur d'initialisation du paiement. Veuillez réessayer.";
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        async function handlePayment() {
+            setLoading(true);
+
+            // 1. Confirm Payment
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    // We handle redirection manually to create order first, 
+                    // or use redirect: 'if_required' to handle success in JS
+                    return_url: window.location.origin + '/checkout-success.html',
+                },
+                redirect: 'if_required'
+            });
+
+            if (error) {
+                if (error.type === "card_error" || error.type === "validation_error") {
+                    showMessage(error.message);
+                } else {
+                    showMessage("Une erreur inattendue est survenue.");
+                }
+                setLoading(false);
+            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+                // 2. Payment Success -> Create Order
+                await createOrderAndClearCart(paymentIntent.id);
+            }
+        }
+
+        async function createOrderAndClearCart(paymentId) {
+            try {
+                // Group items by Chef to potentially create multiple sub-orders or one big order.
+                // For simplicity: One order per checkout, assuming platform handles dispatch.
+                // Or: We just insert one order record.
+                
+                // Note: In a real app, this should be done via Webhook to ensure security.
+                // Here we do it client-side as requested by the prompt instructions.
+
+                // 1. Insert Order
+                // We need a chef_id. If mixed cart, we might pick the first one or NULL if platform order.
+                // Let's assume single chef per order or platform logic. 
+                // Taking the first item's chef for simplicity or NULL.
+                const chefId = cartItems[0]?.product?.chef_id; 
+
+                const { data: orderData, error: orderError } = await supabase
+                    .from('orders')
+                    .insert([{
+                        user_id: currentUser.id,
+                        chef_id: chefId, 
+                        total_price: totalAmount,
+                        status: 'pending',
+                        payment_intent_id: paymentId,
+                        delivery_address: currentUser.user_metadata.address || 'Adresse par défaut' // Simplified
+                    }])
+                    .select()
+                    .single();
+
+                if (orderError) throw orderError;
+
+                // 2. Clear Cart
+                const { error: clearError } = await supabase
+                    .from('cart_items')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+
+                if (clearError) throw clearError;
+
+                // 3. Redirect
+                window.location.href = 'checkout-success.html';
+
+            } catch (err) {
+                console.error('Error creating order:', err);
+                showMessage("Paiement réussi mais erreur lors de la création de la commande. Contactez le support.");
+                setLoading(false);
+            }
+        }
+
+        function showMessage(messageText) {
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = messageText;
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnPay.disabled = true;
+                document.querySelector('#spinner').classList.remove('hidden');
+                document.querySelector('#button-text').classList.add('hidden');
+            } else {
+                btnPay.disabled = false;
+                document.querySelector('#spinner').classList.add('hidden');
+                document.querySelector('#button-text').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi de Commande - GreenDelivery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <style>
+        /* Tracking Page Specific Styles */
+        .tracking-page {
+            padding: 2rem 0;
+            background: var(--bg-light);
+            min-height: 90vh;
+        }
+
+        .tracking-header {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .status-steps {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .step {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--border-color);
+        }
+
+        .step.active {
+            background: var(--primary-color);
+            transform: scale(1.2);
+        }
+
+        .tracking-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            height: 600px;
+        }
+
+        /* Map Section */
+        .map-container {
+            background: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+            max-width: 250px;
+        }
+
+        /* Chat Section */
+        .chat-container {
+            background: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-light);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            background: #f9f9f9;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 2px;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: var(--primary-color);
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 4px;
+            display: block;
+            text-align: right;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+            background: #fff;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn-send {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 900px) {
+            .tracking-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .map-container {
+                height: 400px;
+            }
+            .chat-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav intranet-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            <div class="nav-links">
+                <a href="consumer-dashboard.html" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left"></i> Retour au Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="tracking-page">
+        <div class="container">
+            
+            <!-- Header Status -->
+            <div class="tracking-header">
+                <div>
+                    <h1 id="order-id-display">Commande #...</h1>
+                    <p id="order-status-text" class="text-light">Chargement du statut...</p>
+                </div>
+                <div class="status-steps">
+                    <div class="step active" title="Confirmée"></div>
+                    <div class="step" id="step-cooking" title="En cuisine"></div>
+                    <div class="step" id="step-delivering" title="En livraison"></div>
+                    <div class="step" id="step-delivered" title="Livrée"></div>
+                </div>
+            </div>
+
+            <div id="loading-state" class="loader-container">
+                <div class="loader"></div>
+            </div>
+
+            <div id="tracking-content" class="tracking-layout hidden">
+                
+                <!-- Map -->
+                <div class="map-container">
+                    <div id="map"></div>
+                    <div class="map-overlay">
+                        <h4><i class="fas fa-bicycle"></i> Livreur</h4>
+                        <p id="courier-info">En attente d'assignation...</p>
+                        <p id="eta-info" style="font-weight: bold; color: var(--primary-color); margin-top: 0.5rem;">-- min</p>
+                    </div>
+                </div>
+
+                <!-- Chat -->
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <i class="fas fa-comments"></i> Discussion avec le livreur
+                    </div>
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- Messages injected via JS -->
+                        <div class="text-center text-light" style="margin-top: 2rem;">
+                            <small>Début de la conversation</small>
+                        </div>
+                    </div>
+                    <form id="chat-form" class="chat-input-area">
+                        <input type="text" id="message-input" placeholder="Écrivez votre message..." autocomplete="off">
+                        <button type="submit" class="btn-send">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>GreenDelivery</h4>
+                <p>Suivi en temps réel propulsé par Supabase.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Aide</h4>
+                <a href="consumer-dashboard.html">Mes Commandes</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSession } from './auth-oauth.js';
+
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const trackingContent = document.getElementById('tracking-content');
+        const orderIdDisplay = document.getElementById('order-id-display');
+        const orderStatusText = document.getElementById('order-status-text');
+        const courierInfo = document.getElementById('courier-info');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        
+        // Steps
+        const stepCooking = document.getElementById('step-cooking');
+        const stepDelivering = document.getElementById('step-delivering');
+        const stepDelivered = document.getElementById('step-delivered');
+
+        // State
+        let currentUser = null;
+        let currentOrder = null;
+        let map = null;
+        let courierMarker = null;
+        let userMarker = null;
+
+        // Get Order ID
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Auth Check
+            const session = await checkSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+
+            if (!orderId) {
+                alert("Commande non spécifiée.");
+                window.location.href = 'consumer-dashboard.html';
+                return;
+            }
+
+            // 2. Load Order Data
+            await loadOrderDetails();
+
+            // 3. Init Map
+            initMap();
+
+            // 4. Subscriptions
+            subscribeToOrderUpdates();
+            subscribeToCourierLocation();
+            
+            // 5. Chat
+            await loadChatHistory();
+            subscribeToChat();
+        });
+
+        async function loadOrderDetails() {
+            try {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select(`
+                        *,
+                        courier:profiles!courier_id(name, avatar)
+                    `)
+                    .eq('id', orderId)
+                    .single();
+
+                if (error) throw error;
+                currentOrder = data;
+
+                renderOrderHeader();
+                
+                loadingState.style.display = 'none';
+                trackingContent.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('Error loading order:', err);
+                alert("Impossible de charger la commande.");
+            }
+        }
+
+        function renderOrderHeader() {
+            orderIdDisplay.textContent = `Commande #${currentOrder.id.slice(0, 8)}`;
+            updateStatusUI(currentOrder.status);
+
+            if (currentOrder.courier) {
+                courierInfo.textContent = `${currentOrder.courier.name} est en route.`;
+            } else {
+                courierInfo.textContent = "Recherche d'un livreur...";
+            }
+        }
+
+        function updateStatusUI(status) {
+            const labels = {
+                'pending': 'En attente de confirmation',
+                'cooking': 'En préparation en cuisine',
+                'delivering': 'En cours de livraison',
+                'delivered': 'Commande livrée',
+                'cancelled': 'Commande annulée'
+            };
+            orderStatusText.textContent = labels[status] || status;
+
+            // Update steps
+            if (['cooking', 'delivering', 'delivered'].includes(status)) stepCooking.classList.add('active');
+            if (['delivering', 'delivered'].includes(status)) stepDelivering.classList.add('active');
+            if (status === 'delivered') stepDelivered.classList.add('active');
+        }
+
+        // --- Map Logic ---
+
+        function initMap() {
+            // Default center (Paris) or User Address if geocoded
+            // For demo, we use a fixed point or try to parse address if coordinates existed in DB
+            const defaultLat = 48.8566;
+            const defaultLng = 2.3522;
+
+            map = L.map('map').setView([defaultLat, defaultLng], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add User Marker (Destination)
+            // In a real app, order.delivery_lat/long would be used
+            userMarker = L.marker([defaultLat, defaultLng]).addTo(map)
+                .bindPopup("Votre adresse de livraison")
+                .openPopup();
+        }
+
+        function updateCourierPosition(lat, lng) {
+            if (!map) return;
+
+            const newPos = [lat, lng];
+
+            if (courierMarker) {
+                courierMarker.setLatLng(newPos);
+            } else {
+                // Create custom icon
+                const courierIcon = L.icon({
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/512/713/713311.png', // Placeholder bike icon
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                });
+
+                courierMarker = L.marker(newPos, { icon: courierIcon }).addTo(map)
+                    .bindPopup("Livreur");
+            }
+
+            // Center map to fit both
+            const group = new L.featureGroup([userMarker, courierMarker]);
+            map.fitBounds(group.getBounds(), { padding: [50, 50] });
+        }
+
+        // --- Realtime Subscriptions ---
+
+        function subscribeToOrderUpdates() {
+            supabase
+                .channel(`order_status_${orderId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `id=eq.${orderId}`
+                    },
+                    (payload) => {
+                        currentOrder = payload.new;
+                        updateStatusUI(currentOrder.status);
+                        if (currentOrder.courier_id && !courierMarker) {
+                            // Reload to get courier name if just assigned
+                            loadOrderDetails(); 
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+        function subscribeToCourierLocation() {
+            // Subscribe to Broadcast channel for high-frequency location updates
+            const channel = supabase.channel(`tracking_${orderId}`);
+
+            channel
+                .on(
+                    'broadcast',
+                    { event: 'location' },
+                    (payload) => {
+                        console.log('Location update:', payload);
+                        if (payload.lat && payload.long) {
+                            updateCourierPosition(payload.lat, payload.long);
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log(`Subscribed to tracking_${orderId}`);
+                    }
+                });
+        }
+
+        // --- Chat Logic ---
+
+        async function loadChatHistory() {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('order_id', orderId)
+                .order('created_at', { ascending: true });
+
+            if (error) console.error('Chat load error:', error);
+            
+            if (data) {
+                data.forEach(msg => appendMessage(msg));
+            }
+        }
+
+        function subscribeToChat() {
+            supabase
+                .channel(`chat_${orderId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'messages',
+                        filter: `order_id=eq.${orderId}`
+                    },
+                    (payload) => {
+                        appendMessage(payload.new);
+                    }
+                )
+                .subscribe();
+        }
+
+        function appendMessage(msg) {
+            const isMe = msg.sender_id === currentUser.id;
+            const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                ${msg.content}
+                <span class="message-time">${time}</span>
+            `;
+            
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = messageInput.value.trim();
+            if (!content) return;
+
+            messageInput.value = '';
+
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([{
+                        order_id: orderId,
+                        sender_id: currentUser.id,
+                        content: content
+                    }]);
+
+                if (error) throw error;
+                // Message will be appended via subscription
+            } catch (err) {
+                console.error('Send error:', err);
+                alert("Erreur d'envoi du message.");
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Non Trouvée - GreenDelivery</title>
+    <meta name="description" content="Erreur 404 - La page que vous recherchez n'existe pas.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .error-page {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #fff 100%);
+            padding: 2rem;
+        }
+
+        .error-content {
+            max-width: 600px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .error-title {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            color: var(--border-color);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            
+            <button class="burger-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="nav-links">
+                <a href="index.html">Accueil</a>
+                <a href="index.html#marketplace">Plats</a>
+                <div id="auth-buttons">
+                    <a href="login.html" class="btn btn-secondary">Connexion</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="error-page">
+        <div class="container error-content">
+            <div class="error-icon">
+                <i class="fas fa-carrot fa-spin" style="animation-duration: 10s;"></i>
+            </div>
+            <h1 class="error-code">404</h1>
+            <h2 class="error-title">Oups ! Cette page s'est perdue dans la nature.</h2>
+            <p class="error-message">
+                Le plat ou la page que vous recherchez n'existe pas, a été déplacé ou n'est plus disponible.
+                Pas de panique, de nombreux autres délices vous attendent.
+            </p>
+            <a href="index.html" class="btn btn-primary btn-lg">
+                <i class="fas fa-home"></i> Retour à l'accueil
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>GreenDelivery</h4>
+                <p>La plateforme de livraison qui respecte les hommes et la planète.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Liens utiles</h4>
+                <a href="index.html">Accueil</a>
+                <a href="login.html">Connexion</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <p>support@greendelivery.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 GreenDelivery. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { checkSession } from './auth-oauth.js';
+
+        // Check auth to update header links
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSession();
+            const authButtons = document.getElementById('auth-buttons');
+
+            if (session) {
+                const user = session.user;
+                const role = user.user_metadata.role || 'consumer';
+                let dashboardLink = 'consumer-dashboard.html';
+
+                if (role === 'chef') dashboardLink = 'chef-dashboard.html';
+                if (role === 'courier') dashboardLink = 'courier-dashboard.html';
+
+                authButtons.innerHTML = `
+                    <a href="${dashboardLink}" class="btn btn-primary">Mon Espace</a>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

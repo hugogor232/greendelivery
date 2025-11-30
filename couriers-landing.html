@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devenir Livreur - GreenDelivery</title>
+    <meta name="description" content="Rejoignez la flotte GreenDelivery. Livrez à vélo, choisissez vos horaires et profitez d'une rémunération attractive.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Courier Landing Specific Styles */
+        .courier-hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1616963248328-6b7bea57e1d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            padding: 8rem 0 6rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .courier-hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+        }
+
+        .courier-hero p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            opacity: 0.95;
+        }
+
+        .stat-banner {
+            background: var(--primary-color);
+            color: #fff;
+            padding: 3rem 0;
+            margin-top: -3rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .benefits-section {
+            padding: 6rem 0;
+            background: #fff;
+        }
+
+        .benefit-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            transition: transform 0.3s;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-light);
+            color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.5rem;
+        }
+
+        .requirements-section {
+            background: var(--bg-light);
+            padding: 5rem 0;
+        }
+
+        .req-list {
+            list-style: none;
+            padding: 0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .req-list li {
+            background: #fff;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .req-list li i {
+            color: var(--success-color);
+            font-size: 1.2rem;
+        }
+
+        .cta-section {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .courier-hero h1 { font-size: 2.5rem; }
+            .stat-grid { grid-template-columns: 1fr; gap: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            
+            <button class="burger-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="nav-links">
+                <a href="index.html">Accueil</a>
+                <a href="partners.html">Devenir Chef</a>
+                <a href="couriers-landing.html" class="active">Devenir Livreur</a>
+                <div id="auth-buttons">
+                    <a href="login.html" class="btn btn-secondary">Connexion</a>
+                    <a href="register.html" class="btn btn-primary">Inscription</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="courier-hero">
+        <div class="container">
+            <h1>Livrez vert, gagnez plus.</h1>
+            <p>Rejoignez la première flotte de livraison 100% écologique. Flexibilité totale, rémunération juste et impact positif.</p>
+            <a href="register.html?role=courier" class="btn btn-primary btn-lg">
+                Je deviens livreur <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Stats Banner -->
+    <div class="stat-banner">
+        <div class="container">
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <h3>15€+</h3>
+                    <p>Revenu horaire moyen</p>
+                </div>
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Pourboires pour vous</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0g</h3>
+                    <p>CO2 émis par livraison</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Benefits Section -->
+    <section class="benefits-section">
+        <div class="container">
+            <div class="section-header" style="text-align: center; margin-bottom: 4rem;">
+                <h2>Pourquoi choisir GreenDelivery ?</h2>
+                <p class="text-light">Plus qu'un job, une mission pour votre ville.</p>
+            </div>
+
+            <div class="grid-3">
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <h3>Liberté Totale</h3>
+                    <p>Connectez-vous quand vous voulez. Pas de planning imposé, vous êtes votre propre patron.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-wallet"></i></div>
+                    <h3>Gains Transparents</h3>
+                    <p>Paiement à la course + bonus distance + 100% des pourboires. Virements hebdomadaires.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon"><i class="fas fa-bicycle"></i></div>
+                    <h3>Équipement Fourni</h3>
+                    <p>Sac isotherme professionnel et support téléphone offerts après vos 10 premières courses.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="requirements-section">
+        <div class="container">
+            <div class="grid-2" style="align-items: center; gap: 4rem;">
+                <div>
+                    <h2 style="margin-bottom: 2rem;">Ce qu'il vous faut pour démarrer</h2>
+                    <ul class="req-list">
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Un vélo (classique ou électrique) en bon état</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Un smartphone (iOS ou Android) avec GPS</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Être majeur et avoir le droit de travailler</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Un statut d'auto-entrepreneur (on vous aide !)</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <img src="https://images.unsplash.com/photo-1556745753-b2904692b3cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Livreur à vélo" style="width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow-lg);">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Preview -->
+    <section class="section-padding">
+        <div class="container" style="text-align: center;">
+            <h2 style="margin-bottom: 3rem;">Une application pensée pour vous</h2>
+            <div class="grid-3">
+                <div>
+                    <i class="fas fa-map-marked-alt fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3>Navigation Intelligente</h3>
+                    <p>Itinéraires optimisés pour les vélos, évitant les zones dangereuses.</p>
+                </div>
+                <div>
+                    <i class="fas fa-chart-line fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3>Suivi des Gains</h3>
+                    <p>Visualisez vos revenus en temps réel après chaque course.</p>
+                </div>
+                <div>
+                    <i class="fas fa-headset fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3>Support 24/7</h3>
+                    <p>Une équipe dédiée disponible à tout moment en cas de pépin.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Footer -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 style="margin-bottom: 1.5rem;">Prêt à prendre la route ?</h2>
+            <p style="margin-bottom: 2.5rem; font-size: 1.2rem; opacity: 0.9;">L'inscription prend moins de 5 minutes.</p>
+            <a href="register.html?role=courier" class="btn btn-primary btn-lg">Commencer maintenant</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>GreenDelivery</h4>
+                <p>La plateforme de livraison qui respecte les hommes et la planète.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Liens utiles</h4>
+                <a href="register.html?role=courier">S'inscrire</a>
+                <a href="login.html">Espace Livreur</a>
+                <a href="index.html">Accueil</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <p>riders@greendelivery.com</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 GreenDelivery. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { checkSession } from './auth-oauth.js';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSession();
+            const authButtons = document.getElementById('auth-buttons');
+
+            if (session) {
+                const user = session.user;
+                const role = user.user_metadata.role || 'consumer';
+                let dashboardLink = 'dashboard.html';
+
+                if (role === 'chef') dashboardLink = 'chef-dashboard.html';
+                if (role === 'courier') dashboardLink = 'courier-dashboard.html';
+                if (role === 'consumer') dashboardLink = 'consumer-dashboard.html';
+
+                authButtons.innerHTML = `
+                    <a href="${dashboardLink}" class="btn btn-primary">Mon Espace</a>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

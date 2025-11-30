@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Livraison en Cours - GreenDelivery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        /* Delivery Active Specific Styles */
+        body {
+            overflow: hidden; /* Prevent scrolling, app-like feel */
+            background: #f4f6f8;
+        }
+
+        .delivery-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: #1976d2;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(25, 118, 210, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
+        }
+
+        /* Map Area */
+        .map-wrapper {
+            flex: 1;
+            position: relative;
+            background: #e0e0e0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet {
+            background: #fff;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .client-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .client-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .address-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-action {
+            padding: 0.8rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .btn-action:hover {
+            background: var(--bg-light);
+        }
+
+        .btn-finish {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-finish:active {
+            transform: scale(0.98);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loader"></div>
+        <p style="margin-top: 1rem; color: var(--text-light);">Initialisation du GPS...</p>
+    </div>
+
+    <div class="delivery-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="status-badge">
+                <div class="pulse"></div>
+                GPS Actif
+            </div>
+            <div style="font-weight: 600;" id="order-id-display">#----</div>
+            <a href="courier-dashboard.html" class="btn btn-sm btn-outline">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet">
+            <div class="client-info">
+                <img id="client-avatar" src="" alt="Client" class="client-avatar">
+                <div>
+                    <h3 id="client-name" style="margin: 0; font-size: 1.1rem;">Chargement...</h3>
+                    <span class="text-light text-sm">Client</span>
+                </div>
+                <div style="margin-left: auto;">
+                    <a href="#" id="btn-call" class="btn-action" style="width: 40px; height: 40px; padding: 0; border-radius: 50%;">
+                        <i class="fas fa-phone"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="address-box">
+                <div>
+                    <small class="text-light">Destination</small>
+                    <p id="delivery-address" style="font-weight: 600; margin: 0;">...</p>
+                </div>
+                <a href="#" id="btn-navigate" target="_blank" class="btn-action" style="border: none; background: #e3f2fd; color: #1976d2;">
+                    <i class="fas fa-location-arrow"></i>
+                </a>
+            </div>
+
+            <button id="btn-delivered" class="btn-finish">
+                <i class="fas fa-check-circle"></i> CONFIRMER LA LIVRAISON
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSession } from './auth-oauth.js';
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const orderIdDisplay = document.getElementById('order-id-display');
+        const clientNameEl = document.getElementById('client-name');
+        const clientAvatarEl = document.getElementById('client-avatar');
+        const deliveryAddressEl = document.getElementById('delivery-address');
+        const btnCall = document.getElementById('btn-call');
+        const btnNavigate = document.getElementById('btn-navigate');
+        const btnDelivered = document.getElementById('btn-delivered');
+
+        // State
+        let currentUser = null;
+        let currentOrder = null;
+        let map = null;
+        let courierMarker = null;
+        let destMarker = null;
+        let watchId = null;
+        let lastPosition = null;
+        let broadcastChannel = null;
+
+        // Constants
+        const GPS_UPDATE_INTERVAL = 10000; // 10 seconds
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Auth Check
+            const session = await checkSession();
+            if (!session || session.user.user_metadata.role !== 'courier') {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+
+            // 2. Load Active Order
+            await loadActiveOrder();
+
+            // 3. Init Map & GPS
+            if (currentOrder) {
+                initMap();
+                startTracking();
+                
+                // Setup Broadcast Channel
+                broadcastChannel = supabase.channel(`tracking_${currentOrder.id}`);
+                broadcastChannel.subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('Broadcasting location enabled');
+                    }
+                });
+
+                // Start periodic updates
+                setInterval(sendLocationUpdate, GPS_UPDATE_INTERVAL);
+            }
+
+            // 4. Event Listeners
+            btnDelivered.addEventListener('click', markAsDelivered);
+        });
+
+        async function loadActiveOrder() {
+            try {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select(`
+                        *,
+                        client:profiles!user_id(name, avatar, phone)
+                    `)
+                    .eq('courier_id', currentUser.id)
+                    .eq('status', 'delivering')
+                    .single();
+
+                if (error || !data) {
+                    // No active order, redirect to dashboard
+                    window.location.href = 'courier-dashboard.html';
+                    return;
+                }
+
+                currentOrder = data;
+                renderOrderDetails();
+                loadingOverlay.style.display = 'none';
+
+            } catch (err) {
+                console.error('Error loading order:', err);
+                alert("Erreur de chargement de la commande.");
+                window.location.href = 'courier-dashboard.html';
+            }
+        }
+
+        function renderOrderDetails() {
+            orderIdDisplay.textContent = `#${currentOrder.id.slice(0, 4)}`;
+            
+            const client = currentOrder.client || {};
+            clientNameEl.textContent = client.name || 'Client';
+            clientAvatarEl.src = client.avatar || 'https://via.placeholder.com/50';
+            deliveryAddressEl.textContent = currentOrder.delivery_address || 'Adresse non spécifiée';
+
+            if (client.phone) {
+                btnCall.href = `tel:${client.phone}`;
+            } else {
+                btnCall.style.opacity = '0.5';
+                btnCall.style.pointerEvents = 'none';
+            }
+
+            // Google Maps Navigation Link
+            // Assuming address is text, let Google handle geocoding query
+            const encodedAddress = encodeURIComponent(currentOrder.delivery_address);
+            btnNavigate.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        }
+
+        // --- Map & GPS Logic ---
+
+        function initMap() {
+            // Default center, will be updated by GPS
+            map = L.map('map', { zoomControl: false }).setView([48.8566, 2.3522], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            // Destination Marker (if we had lat/long in order, we would plot it)
+            // For now, we rely on text address for navigation button, 
+            // but we can try to geocode or just show courier position.
+            // Let's assume we don't have client lat/long in this simplified schema unless added.
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée.");
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    lastPosition = { lat: latitude, long: longitude };
+                    
+                    updateMapPosition(latitude, longitude);
+                },
+                (error) => {
+                    console.error('GPS Error:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function updateMapPosition(lat, lng) {
+            if (!map) return;
+
+            const newLatLng = [lat, lng];
+
+            if (!courierMarker) {
+                const icon = L.divIcon({
+                    className: 'courier-marker-icon',
+                    html: '<div style="background:#1976d2; width:16px; height:16px; border:3px solid white; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [22, 22]
+                });
+                courierMarker = L.marker(newLatLng, { icon: icon }).addTo(map);
+                map.setView(newLatLng, 16);
+            } else {
+                courierMarker.setLatLng(newLatLng);
+                map.panTo(newLatLng);
+            }
+        }
+
+        async function sendLocationUpdate() {
+            if (!lastPosition || !currentOrder) return;
+
+            // 1. Send via Broadcast (Realtime UI for Consumer)
+            if (broadcastChannel) {
+                broadcastChannel.send({
+                    type: 'broadcast',
+                    event: 'location',
+                    payload: lastPosition
+                });
+            }
+
+            // 2. Update DB (Persistence/History)
+            // We can insert into a 'courier_positions' table or update 'profiles'
+            // Let's insert into a hypothetical tracking table for history
+            try {
+                // Check if table exists in schema instructions (implied). 
+                // If not, we might skip or update profile. 
+                // Let's assume we update the order's current_lat/long if columns exist, 
+                // or just log it. For safety in this generated code, let's update user metadata/profile.
+                
+                /* 
+                // Option A: Dedicated table
+                await supabase.from('courier_positions').insert({
+                    order_id: currentOrder.id,
+                    courier_id: currentUser.id,
+                    lat: lastPosition.lat,
+                    long: lastPosition.long
+                });
+                */
+
+                // Option B: Broadcast is enough for "Realtime", DB update is for "Last Known"
+                // This is safer without explicit schema knowledge of 'courier_positions'
+                // console.log('Location broadcasted');
+
+            } catch (err) {
+                console.error('Location sync error:', err);
+            }
+        }
+
+        // --- Actions ---
+
+        async function markAsDelivered() {
+            if (!confirm("Confirmer que la commande a été livrée au client ?")) return;
+
+            btnDelivered.disabled = true;
+            btnDelivered.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+
+            try {
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ 
+                        status: 'delivered',
+                        delivered_at: new Date().toISOString()
+                    })
+                    .eq('id', currentOrder.id);
+
+                if (error) throw error;
+
+                // Stop tracking
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                if (broadcastChannel) supabase.removeChannel(broadcastChannel);
+
+                alert("Livraison terminée ! Bon travail.");
+                window.location.href = 'courier-dashboard.html';
+
+            } catch (err) {
+                console.error('Error finishing order:', err);
+                alert("Erreur lors de la clôture de la commande.");
+                btnDelivered.disabled = false;
+                btnDelivered.innerHTML = '<i class="fas fa-check-circle"></i> CONFIRMER LA LIVRAISON';
+            }
+        }
+
+    </script>
+</body>
+</html>

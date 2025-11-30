@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Consommateur - GreenDelivery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Dashboard Specific Styles */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            min-height: 80vh;
+        }
+
+        .sidebar {
+            background: #fff;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+        }
+
+        .user-profile-summary {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: var(--text-dark);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: background 0.3s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-light);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .dashboard-main h1 {
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+
+        .orders-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .order-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .order-info h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .order-meta {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-cooking { background: #cce5ff; color: #004085; }
+        .status-delivering { background: #d4edda; color: #155724; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background: #fff;
+            border-radius: var(--border-radius);
+            color: var(--text-light);
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--text-dark);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+            .order-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .order-actions {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav intranet-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            <div class="nav-links">
+                <span id="header-user-name" style="margin-right: 1rem; font-weight: 500;"></span>
+                <button id="btn-logout" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Layout -->
+    <div class="dashboard-layout">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="user-profile-summary">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3 id="sidebar-name">Chargement...</h3>
+                <p class="text-light">Consommateur</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="consumer-dashboard.html" class="nav-item active">
+                    <i class="fas fa-clock"></i> Commandes en cours
+                </a>
+                <a href="history.html" class="nav-item">
+                    <i class="fas fa-history"></i> Historique
+                </a>
+                <a href="profile-settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i> Paramètres
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <h1>Commandes en cours</h1>
+            
+            <div id="loading-spinner" class="loader-container">
+                <div class="loader"></div>
+            </div>
+
+            <div id="active-orders-list" class="orders-grid">
+                <!-- Orders injected via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        <i class="fas fa-bell"></i>
+        <span id="toast-message">Notification</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { logout } from './auth-oauth.js';
+
+        // DOM Elements
+        const activeOrdersList = document.getElementById('active-orders-list');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const headerUserName = document.getElementById('header-user-name');
+        const sidebarName = document.getElementById('sidebar-name');
+        const btnLogout = document.getElementById('btn-logout');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await verifyAuth();
+            await fetchActiveOrders();
+            setupRealtimeSubscription();
+
+            btnLogout.addEventListener('click', async () => {
+                await logout();
+                window.location.href = 'login.html';
+            });
+        });
+
+        // 1. Verify Session & Role
+        async function verifyAuth() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error || !session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Check Role
+            const role = session.user.user_metadata.role;
+            if (role !== 'consumer') {
+                // Redirect incorrect roles to their respective dashboards or login
+                if (role === 'chef') window.location.href = 'chef-dashboard.html';
+                else if (role === 'courier') window.location.href = 'courier-dashboard.html';
+                else window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = session.user;
+            
+            // Update UI
+            const displayName = currentUser.user_metadata.full_name || currentUser.email;
+            headerUserName.textContent = displayName;
+            sidebarName.textContent = displayName;
+        }
+
+        // 2. Fetch Active Orders
+        async function fetchActiveOrders() {
+            try {
+                const { data: orders, error } = await supabase
+                    .from('orders')
+                    .select(`
+                        *,
+                        chef:profiles!chef_id(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .in('status', ['pending', 'cooking', 'delivering'])
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                renderOrders(orders);
+            } catch (err) {
+                console.error('Error fetching orders:', err);
+                activeOrdersList.innerHTML = '<p class="error-msg">Impossible de charger les commandes.</p>';
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // 3. Realtime Subscription
+        function setupRealtimeSubscription() {
+            if (!currentUser) return;
+
+            const channel = supabase
+                .channel('public:orders')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `user_id=eq.${currentUser.id}`
+                    },
+                    (payload) => {
+                        console.log('Order update received:', payload);
+                        handleOrderUpdate(payload.new);
+                    }
+                )
+                .subscribe();
+        }
+
+        function handleOrderUpdate(updatedOrder) {
+            // Show notification
+            const statusLabels = {
+                'pending': 'En attente',
+                'cooking': 'En préparation',
+                'delivering': 'En livraison',
+                'delivered': 'Livrée',
+                'cancelled': 'Annulée'
+            };
+            
+            const msg = `Votre commande #${updatedOrder.id.slice(0, 4)} est maintenant : ${statusLabels[updatedOrder.status] || updatedOrder.status}`;
+            showToast(msg);
+
+            // Refresh list if status is still active, otherwise remove it or refresh all
+            if (['pending', 'cooking', 'delivering'].includes(updatedOrder.status)) {
+                fetchActiveOrders(); // Refresh to get relations (chef name)
+            } else {
+                // If finished/cancelled, remove from active list
+                fetchActiveOrders();
+            }
+        }
+
+        // Rendering Logic
+        function renderOrders(orders) {
+            activeOrdersList.innerHTML = '';
+
+            if (!orders || orders.length === 0) {
+                activeOrdersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils fa-3x" style="margin-bottom: 1rem; color: var(--border-color);"></i>
+                        <p>Aucune commande en cours.</p>
+                        <a href="index.html" class="btn btn-primary" style="margin-top: 1rem;">Commander un plat</a>
+                    </div>
+                `;
+                return;
+            }
+
+            orders.forEach(order => {
+                const statusConfig = getStatusConfig(order.status);
+                const date = new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const chefName = order.chef ? order.chef.name : 'Chef';
+
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                card.innerHTML = `
+                    <div class="order-info">
+                        <h3>Commande #${order.id.slice(0, 8)}</h3>
+                        <div class="order-meta">
+                            <span><i class="fas fa-user-circle"></i> ${chefName}</span>
+                            <span><i class="fas fa-clock"></i> ${date}</span>
+                            <span><i class="fas fa-tag"></i> ${order.total_price} €</span>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="status-badge ${statusConfig.class}">${statusConfig.label}</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <a href="order-tracking.html?id=${order.id}" class="btn btn-primary">
+                            <i class="fas fa-map-marker-alt"></i> Suivre
+                        </a>
+                    </div>
+                `;
+                activeOrdersList.appendChild(card);
+            });
+        }
+
+        function getStatusConfig(status) {
+            switch (status) {
+                case 'pending': return { label: 'En attente', class: 'status-pending' };
+                case 'cooking': return { label: 'En cuisine', class: 'status-cooking' };
+                case 'delivering': return { label: 'En livraison', class: 'status-delivering' };
+                default: return { label: status, class: '' };
+            }
+        }
+
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Menus - GreenDelivery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Menu Management Specific Styles */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .product-card {
+            background: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .product-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+            background: var(--bg-light);
+        }
+
+        .product-details {
+            padding: 1.5rem;
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .product-price {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .product-category {
+            display: inline-block;
+            background: var(--bg-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .stock-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .stock-inputs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-stock {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-stock:hover {
+            background: var(--bg-light);
+        }
+
+        .stock-display {
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-light);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            height: 100%;
+            width: 100%;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav intranet-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            <div class="nav-links">
+                <a href="chef-dashboard.html" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left"></i> Retour Dashboard
+                </a>
+                <button id="btn-logout" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container" style="padding: 2rem 0;">
+            
+            <div class="page-header">
+                <div>
+                    <h1>Gestion des Menus</h1>
+                    <p class="text-light">Ajoutez, modifiez et gérez vos stocks en temps réel.</p>
+                </div>
+                <button id="btn-add-dish" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nouveau Plat
+                </button>
+            </div>
+
+            <div id="loading-state" class="loader-container">
+                <div class="loader"></div>
+            </div>
+
+            <div id="products-grid" class="products-grid">
+                <!-- Products injected via JS -->
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div id="dish-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <h2 id="modal-title" style="margin-bottom: 1.5rem;">Ajouter un plat</h2>
+            
+            <form id="dish-form">
+                <input type="hidden" id="dish-id">
+                
+                <!-- Image Upload -->
+                <div class="form-group">
+                    <label>Photo du plat</label>
+                    <div class="image-preview" id="preview-container">
+                        <span class="text-light"><i class="fas fa-cloud-upload-alt"></i> Cliquez pour ajouter</span>
+                        <img id="img-preview" src="" alt="" style="display: none;">
+                    </div>
+                    <div class="upload-btn-wrapper">
+                        <button type="button" class="btn btn-outline btn-block">Choisir une image</button>
+                        <input type="file" id="dish-image" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dish-name">Nom du plat</label>
+                    <input type="text" id="dish-name" required placeholder="Ex: Lasagnes Végétariennes">
+                </div>
+
+                <div class="form-group">
+                    <label for="dish-desc">Description</label>
+                    <textarea id="dish-desc" rows="3" placeholder="Ingrédients, allergènes..."></textarea>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="dish-price">Prix (€)</label>
+                        <input type="number" id="dish-price" step="0.50" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dish-category">Catégorie</label>
+                        <select id="dish-category" required>
+                            <option value="french">Français</option>
+                            <option value="italian">Italien</option>
+                            <option value="asian">Asiatique</option>
+                            <option value="vegan">Végétalien</option>
+                            <option value="gluten_free">Sans Gluten</option>
+                            <option value="dessert">Dessert</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center;">
+                    <div class="form-group">
+                        <label for="dish-stock">Stock Initial</label>
+                        <input type="number" id="dish-stock" min="0" value="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Disponible</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dish-available" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-save" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">
+                    Enregistrer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSession, logout } from './auth-oauth.js';
+
+        // DOM Elements
+        const productsGrid = document.getElementById('products-grid');
+        const loadingState = document.getElementById('loading-state');
+        const modal = document.getElementById('dish-modal');
+        const btnAdd = document.getElementById('btn-add-dish');
+        const closeModal = document.querySelector('.close-modal');
+        const dishForm = document.getElementById('dish-form');
+        const imgInput = document.getElementById('dish-image');
+        const imgPreview = document.getElementById('img-preview');
+        const previewContainer = document.getElementById('preview-container');
+        const btnSave = document.getElementById('btn-save');
+
+        // State
+        let currentUser = null;
+        let currentFile = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Auth Check
+            const session = await checkSession();
+            if (!session || session.user.user_metadata.role !== 'chef') {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+
+            // 2. Load Data
+            await fetchDishes();
+            setupRealtime();
+
+            // 3. Event Listeners
+            document.getElementById('btn-logout').addEventListener('click', async () => {
+                await logout();
+                window.location.href = 'login.html';
+            });
+
+            btnAdd.addEventListener('click', () => openModal());
+            closeModal.addEventListener('click', () => modal.classList.remove('active'));
+            
+            // Image Preview
+            imgInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    currentFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imgPreview.src = e.target.result;
+                        imgPreview.style.display = 'block';
+                        previewContainer.querySelector('span').style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Form Submit
+            dishForm.addEventListener('submit', handleFormSubmit);
+        });
+
+        // --- Data Fetching ---
+
+        async function fetchDishes() {
+            try {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('chef_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                renderDishes(data);
+            } catch (err) {
+                console.error('Error fetching dishes:', err);
+                productsGrid.innerHTML = '<p class="error-msg">Erreur de chargement des plats.</p>';
+            } finally {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        function renderDishes(dishes) {
+            productsGrid.innerHTML = '';
+            
+            if (dishes.length === 0) {
+                productsGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+                        <i class="fas fa-utensils fa-3x" style="color: var(--border-color); margin-bottom: 1rem;"></i>
+                        <p>Vous n'avez pas encore ajouté de plats.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            dishes.forEach(dish => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${dish.image_url || 'https://via.placeholder.com/300x200'}" class="product-image" alt="${dish.name}">
+                    <div class="product-details">
+                        <div class="product-header">
+                            <h3 class="product-title">${dish.name}</h3>
+                            <span class="product-price">${dish.price} €</span>
+                        </div>
+                        <span class="product-category">${dish.category}</span>
+                        
+                        <div class="stock-control">
+                            <span class="text-sm text-light">Stock</span>
+                            <div class="stock-inputs">
+                                <button class="btn-stock" onclick="updateStock('${dish.id}', -1)">-</button>
+                                <span class="stock-display" id="stock-${dish.id}">${dish.stock_quantity}</span>
+                                <button class="btn-stock" onclick="updateStock('${dish.id}', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-sm btn-outline" style="flex: 1;" onclick="editDish('${dish.id}')">
+                                <i class="fas fa-edit"></i> Modifier
+                            </button>
+                            <button class="btn btn-sm btn-outline" style="color: #dc2626; border-color: #dc2626;" onclick="deleteDish('${dish.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productsGrid.appendChild(card);
+            });
+
+            // Attach global functions for inline onclick handlers
+            window.updateStock = updateStock;
+            window.editDish = (id) => {
+                const dish = dishes.find(d => d.id === id);
+                openModal(dish);
+            };
+            window.deleteDish = deleteDish;
+        }
+
+        // --- CRUD Operations ---
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+
+            const dishId = document.getElementById('dish-id').value;
+            const name = document.getElementById('dish-name').value;
+            const desc = document.getElementById('dish-desc').value;
+            const price = parseFloat(document.getElementById('dish-price').value);
+            const category = document.getElementById('dish-category').value;
+            const stock = parseInt(document.getElementById('dish-stock').value);
+            const available = document.getElementById('dish-available').checked;
+
+            try {
+                let imageUrl = null;
+
+                // 1. Upload Image if new file selected
+                if (currentFile) {
+                    const fileExt = currentFile.name.split('.').pop();
+                    const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+                    
+                    const { error: uploadError } = await supabase.storage
+                        .from('dishes')
+                        .upload(fileName, currentFile);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('dishes')
+                        .getPublicUrl(fileName);
+                    
+                    imageUrl = publicUrl;
+                }
+
+                // 2. Prepare Data
+                const dishData = {
+                    chef_id: currentUser.id,
+                    name,
+                    description: desc,
+                    price,
+                    category,
+                    stock_quantity: stock,
+                    is_available: available
+                };
+
+                if (imageUrl) dishData.image_url = imageUrl;
+
+                // 3. Insert or Update
+                let error;
+                if (dishId) {
+                    const { error: updateError } = await supabase
+                        .from('products')
+                        .update(dishData)
+                        .eq('id', dishId);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase
+                        .from('products')
+                        .insert([dishData]);
+                    error = insertError;
+                }
+
+                if (error) throw error;
+
+                // Success
+                modal.classList.remove('active');
+                fetchDishes(); // Reload grid
+
+            } catch (err) {
+                console.error('Save error:', err);
+                alert('Erreur lors de la sauvegarde.');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Enregistrer';
+            }
+        }
+
+        async function updateStock(id, change) {
+            const display = document.getElementById(`stock-${id}`);
+            let currentVal = parseInt(display.textContent);
+            let newVal = currentVal + change;
+            if (newVal < 0) newVal = 0;
+
+            // Optimistic UI update
+            display.textContent = newVal;
+
+            try {
+                const { error } = await supabase
+                    .from('products')
+                    .update({ stock_quantity: newVal })
+                    .eq('id', id);
+
+                if (error) throw error;
+            } catch (err) {
+                console.error('Stock update error:', err);
+                display.textContent = currentVal; // Revert
+            }
+        }
+
+        async function deleteDish(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('products')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+                fetchDishes();
+            } catch (err) {
+                console.error('Delete error:', err);
+                alert('Impossible de supprimer le plat.');
+            }
+        }
+
+        // --- Helpers ---
+
+        function openModal(dish = null) {
+            currentFile = null;
+            if (dish) {
+                document.getElementById('modal-title').textContent = 'Modifier le plat';
+                document.getElementById('dish-id').value = dish.id;
+                document.getElementById('dish-name').value = dish.name;
+                document.getElementById('dish-desc').value = dish.description || '';
+                document.getElementById('dish-price').value = dish.price;
+                document.getElementById('dish-category').value = dish.category;
+                document.getElementById('dish-stock').value = dish.stock_quantity;
+                document.getElementById('dish-available').checked = dish.is_available;
+                
+                if (dish.image_url) {
+                    imgPreview.src = dish.image_url;
+                    imgPreview.style.display = 'block';
+                    previewContainer.querySelector('span').style.display = 'none';
+                } else {
+                    resetPreview();
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'Ajouter un plat';
+                dishForm.reset();
+                document.getElementById('dish-id').value = '';
+                resetPreview();
+            }
+            modal.classList.add('active');
+        }
+
+        function resetPreview() {
+            imgPreview.src = '';
+            imgPreview.style.display = 'none';
+            previewContainer.querySelector('span').style.display = 'block';
+        }
+
+        // --- Realtime ---
+        function setupRealtime() {
+            const channel = supabase
+                .channel('menu-updates')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'products',
+                        filter: `chef_id=eq.${currentUser.id}`
+                    },
+                    (payload) => {
+                        // Update stock display in real-time if changed elsewhere (e.g. order placed)
+                        const el = document.getElementById(`stock-${payload.new.id}`);
+                        if (el) {
+                            el.textContent = payload.new.stock_quantity;
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+    </script>
+</body>
+</html>

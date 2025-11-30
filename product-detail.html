@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails du Plat - GreenDelivery</title>
+    <meta name="description" content="Découvrez les ingrédients et l'histoire de ce plat fait maison.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Page specific styles */
+        .product-detail-section {
+            padding: 4rem 0;
+        }
+        
+        .product-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        .product-gallery {
+            position: relative;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .product-gallery img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            aspect-ratio: 4/3;
+        }
+
+        .product-info h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .product-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            color: var(--text-light);
+        }
+
+        .price-tag {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+        }
+
+        .ingredients-box {
+            background: var(--bg-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+        }
+
+        .ingredients-box h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .allergen-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chef-mini-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            transition: transform 0.2s;
+        }
+
+        .chef-mini-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chef-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .add-to-cart-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .qty-btn {
+            background: var(--bg-light);
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .qty-btn:hover {
+            background: var(--border-color);
+        }
+
+        #quantity {
+            width: 50px;
+            text-align: center;
+            border: none;
+            font-weight: 600;
+            -moz-appearance: textfield;
+        }
+
+        .breadcrumbs {
+            margin-bottom: 2rem;
+            color: var(--text-light);
+        }
+
+        .breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .product-layout {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .add-to-cart-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .quantity-selector {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-leaf"></i> GreenDelivery
+            </a>
+            
+            <button class="burger-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="nav-links">
+                <a href="index.html">Accueil</a>
+                <a href="index.html#marketplace">Plats</a>
+                <a href="cart.html" class="cart-link">
+                    <i class="fas fa-shopping-basket"></i> Panier
+                </a>
+                <div id="auth-buttons">
+                    <!-- Injecté par JS -->
+                    <a href="login.html" class="btn btn-secondary">Connexion</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container product-detail-section">
+            
+            <!-- Breadcrumbs -->
+            <div class="breadcrumbs">
+                <a href="index.html">Accueil</a> <i class="fas fa-chevron-right"></i> 
+                <span id="crumb-category">Catégorie</span> <i class="fas fa-chevron-right"></i> 
+                <span id="crumb-name">Chargement...</span>
+            </div>
+
+            <div id="loading-state" class="loader-container">
+                <div class="loader"></div>
+            </div>
+
+            <div id="error-state" class="hidden" style="text-align: center; padding: 3rem;">
+                <h2>Oups !</h2>
+                <p>Ce plat semble introuvable ou n'est plus disponible.</p>
+                <a href="index.html" class="btn btn-primary" style="margin-top: 1rem;">Retour au menu</a>
+            </div>
+
+            <div id="product-content" class="product-layout hidden">
+                <!-- Left Column: Image -->
+                <div class="product-gallery">
+                    <img id="product-image" src="" alt="Photo du plat">
+                    <div class="badge-overlay" style="position: absolute; top: 1rem; right: 1rem;">
+                        <span id="diet-badge" class="badge"></span>
+                    </div>
+                </div>
+
+                <!-- Right Column: Details -->
+                <div class="product-info">
+                    <h1 id="product-name"></h1>
+                    <div class="product-meta">
+                        <span class="price-tag" id="product-price"></span>
+                        <span class="rating"><i class="fas fa-star text-warning"></i> 4.8 (24 avis)</span>
+                    </div>
+
+                    <!-- Chef Link -->
+                    <a id="chef-link" href="#" class="chef-mini-card">
+                        <img id="chef-avatar" src="" alt="Chef" class="chef-avatar">
+                        <div>
+                            <p class="text-sm text-light">Préparé par</p>
+                            <h4 id="chef-name" style="margin:0;"></h4>
+                        </div>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; color: var(--text-light);"></i>
+                    </a>
+
+                    <p id="product-desc" class="description"></p>
+
+                    <!-- Ingredients & Allergens -->
+                    <div class="ingredients-box">
+                        <h3><i class="fas fa-carrot"></i> Ingrédients & Allergènes</h3>
+                        <p id="product-ingredients" style="margin-bottom: 1rem;"></p>
+                        <div id="allergens-container" class="allergen-tags">
+                            <!-- Tags injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <div class="add-to-cart-form">
+                        <div class="quantity-selector">
+                            <button class="qty-btn" onclick="updateQty(-1)">-</button>
+                            <input type="number" id="quantity" value="1" min="1" max="10" readonly>
+                            <button class="qty-btn" onclick="updateQty(1)">+</button>
+                        </div>
+                        <button id="btn-add-cart" class="btn btn-primary btn-lg" style="flex-grow: 1;">
+                            <i class="fas fa-shopping-basket"></i> Ajouter au panier
+                        </button>
+                    </div>
+                    <p id="cart-feedback" style="margin-top: 1rem; font-weight: bold; display: none;"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>GreenDelivery</h4>
+                <p>La plateforme de livraison qui respecte les hommes et la planète.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Liens utiles</h4>
+                <a href="index.html">Accueil</a>
+                <a href="cart.html">Mon Panier</a>
+                <a href="login.html">Connexion</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <p>support@greendelivery.com</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        // Simple quantity logic
+        function updateQty(change) {
+            const input = document.getElementById('quantity');
+            let val = parseInt(input.value) + change;
+            if (val < 1) val = 1;
+            if (val > 20) val = 20;
+            input.value = val;
+        }
+    </script>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSession } from './auth-oauth.js';
+
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const productContent = document.getElementById('product-content');
+        const btnAddCart = document.getElementById('btn-add-cart');
+        const feedbackMsg = document.getElementById('cart-feedback');
+        const authButtons = document.getElementById('auth-buttons');
+
+        // Get Product ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get('id');
+
+        let currentProduct = null;
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Auth State for Header
+            const session = await checkSession();
+            if (session) {
+                currentUser = session.user;
+                authButtons.innerHTML = `<a href="dashboard.html" class="btn btn-outline">Mon Compte</a>`;
+            }
+
+            // 2. Validate ID
+            if (!productId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // 3. Fetch Data
+            await fetchProductDetails();
+
+            // 4. Setup Event Listeners
+            btnAddCart.addEventListener('click', handleAddToCart);
+        });
+
+        async function fetchProductDetails() {
+            try {
+                // Fetch product with chef details using relation
+                const { data, error } = await supabase
+                    .from('products')
+                    .select(`
+                        *,
+                        chef:profiles(*)
+                    `)
+                    .eq('id', productId)
+                    .single();
+
+                if (error) throw error;
+                if (!data) throw new Error('Produit non trouvé');
+
+                currentProduct = data;
+                renderProduct(data);
+
+            } catch (err) {
+                console.error('Error fetching product:', err);
+                loadingState.style.display = 'none';
+                errorState.classList.remove('hidden');
+            }
+        }
+
+        function renderProduct(product) {
+            // Hide loader, show content
+            loadingState.style.display = 'none';
+            productContent.classList.remove('hidden');
+
+            // Text Content
+            document.title = `${product.name} - GreenDelivery`;
+            document.getElementById('product-name').textContent = product.name;
+            document.getElementById('product-price').textContent = `${product.price.toFixed(2)} €`;
+            document.getElementById('product-desc').textContent = product.description || "Aucune description disponible.";
+            document.getElementById('product-ingredients').textContent = product.ingredients || "Ingrédients non spécifiés.";
+            
+            // Breadcrumbs
+            document.getElementById('crumb-category').textContent = product.category || 'Plat';
+            document.getElementById('crumb-name').textContent = product.name;
+
+            // Image
+            const img = document.getElementById('product-image');
+            img.src = product.image_url || 'https://via.placeholder.com/600x400?text=Plat';
+            img.alt = product.name;
+
+            // Badge
+            const badge = document.getElementById('diet-badge');
+            if (product.category) {
+                badge.textContent = product.category;
+                badge.className = `badge badge-${product.category}`;
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Chef Info
+            if (product.chef) {
+                document.getElementById('chef-name').textContent = product.chef.name || 'Chef';
+                document.getElementById('chef-avatar').src = product.chef.avatar || 'https://via.placeholder.com/60?text=Chef';
+                document.getElementById('chef-link').href = `chef-profile.html?id=${product.chef_id}`;
+            }
+
+            // Allergens
+            const allergensContainer = document.getElementById('allergens-container');
+            if (product.allergens && product.allergens.length > 0) {
+                // Assuming allergens is an array of strings or JSON
+                const allergensList = Array.isArray(product.allergens) ? product.allergens : JSON.parse(product.allergens || '[]');
+                
+                allergensList.forEach(allergen => {
+                    const tag = document.createElement('span');
+                    tag.className = 'tag';
+                    tag.innerHTML = `<i class="fas fa-exclamation-circle text-warning"></i> ${allergen}`;
+                    allergensContainer.appendChild(tag);
+                });
+            } else {
+                allergensContainer.innerHTML = '<span class="text-sm text-light">Aucun allergène signalé</span>';
+            }
+        }
+
+        async function handleAddToCart() {
+            // 1. Check Auth
+            if (!currentUser) {
+                // Save current URL to redirect back after login (optional logic for login page)
+                sessionStorage.setItem('redirect_after_login', window.location.href);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // 2. Get Quantity
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            btnAddCart.disabled = true;
+            btnAddCart.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ajout...';
+
+            try {
+                // 3. Check if item already exists in cart
+                const { data: existingItem, error: fetchError } = await supabase
+                    .from('cart_items')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('product_id', currentProduct.id)
+                    .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') throw fetchError; // PGRST116 is "Row not found"
+
+                if (existingItem) {
+                    // Update quantity
+                    const { error } = await supabase
+                        .from('cart_items')
+                        .update({ quantity: existingItem.quantity + quantity })
+                        .eq('id', existingItem.id);
+                    
+                    if (error) throw error;
+                } else {
+                    // Insert new item
+                    const { error } = await supabase
+                        .from('cart_items')
+                        .insert([{
+                            user_id: currentUser.id,
+                            product_id: currentProduct.id,
+                            quantity: quantity
+                        }]);
+                    
+                    if (error) throw error;
+                }
+
+                // Success Feedback
+                feedbackMsg.style.display = 'block';
+                feedbackMsg.style.color = 'var(--success-color)';
+                feedbackMsg.textContent = 'Produit ajouté au panier !';
+                
+                // Reset button
+                setTimeout(() => {
+                    btnAddCart.disabled = false;
+                    btnAddCart.innerHTML = '<i class="fas fa-shopping-basket"></i> Ajouter au panier';
+                    feedbackMsg.style.display = 'none';
+                }, 2000);
+
+            } catch (err) {
+                console.error('Error adding to cart:', err);
+                feedbackMsg.style.display = 'block';
+                feedbackMsg.style.color = 'var(--error-color)';
+                feedbackMsg.textContent = 'Erreur lors de l\'ajout au panier.';
+                btnAddCart.disabled = false;
+                btnAddCart.innerHTML = '<i class="fas fa-shopping-basket"></i> Ajouter au panier';
+            }
+        }
+    </script>
+</body>
+</html>
